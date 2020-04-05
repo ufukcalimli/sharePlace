@@ -22,8 +22,12 @@ const inputReducer = (state, action) => {
   }
 };
 
-const Input = props => {
-  const [inputState, dispatch] = useReducer(inputReducer, { value: '', isValid: false });
+const Input = (props) => {
+  const [inputState, dispatch] = useReducer(inputReducer, {
+    value: props.initialValue || '',
+    isTouched: false,
+    isValid: props.initialValid || false,
+  });
 
   const { id, onInput } = props;
   const { value, isValid } = inputState;
@@ -32,7 +36,7 @@ const Input = props => {
     onInput(id, value, isValid);
   }, [id, value, isValid, onInput]);
 
-  const changeHandler = event => {
+  const changeHandler = (event) => {
     dispatch({ type: 'CHANGE', val: event.target.value, validators: props.validators });
   };
 
@@ -62,9 +66,9 @@ const Input = props => {
 
   return (
     <div
-      className={`form-control ${!inputState.isValid &&
-        inputState.isTouched &&
-        'form-control--invalid'}`}
+      className={`form-control ${
+        !inputState.isValid && inputState.isTouched && 'form-control--invalid'
+      }`}
     >
       <label htmlFor={props.id}>{props.label}</label>
       {element}
