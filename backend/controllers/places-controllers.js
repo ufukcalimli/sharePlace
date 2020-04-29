@@ -3,33 +3,21 @@ const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
 const { getCoordForAddress } = require('../util/location');
+const Place = require('../models/place');
 
 let DUMMY_PLACES = [
   {
     id: 'p1',
     title: 'Walter White House',
     description: "One of the most famous drug dealers' house.",
-    imageUrl:
-      'https://static.independent.co.uk/s3fs-public/thumbnails/image/2016/01/15/15/Breaking-Bad-House.jpg.png?w968h681',
     address: '3828 Piermont Dr NE, Albuquerque, NM 87111',
+    image:
+      'https://static.independent.co.uk/s3fs-public/thumbnails/image/2016/01/15/15/Breaking-Bad-House.jpg.png?w968h681',
     location: {
       lat: 35.126114,
       lng: -106.536564,
     },
     creator: 'u1',
-  },
-  {
-    id: 'p2',
-    title: 'Empire State Building',
-    description: 'One of the most famous sky scrapper in the world.',
-    imageUrl:
-      'https://images.cdn.nouveau.nl/62DQRbCr4V05yAFtCrSN_8NXmjk=/890x0/smart/nouveau.nl/s3fs-public/main_media/nouveau-travel-empire-state-building.jpg?itok=_dAIVK7C',
-    address: '20 W 34th St, New York, NY 10001',
-    location: {
-      lat: 40.7484405,
-      lng: -73.9856644,
-    },
-    creator: 'u2',
   },
 ];
 
@@ -59,8 +47,8 @@ const getPlacesByUserId = (req, res, next) => {
 
 const createPlace = async (req, res, next) => {
   const errors = validationResult(req);
-  if (errors.isEmpty()) {
-    next(new HttpError('Invalid input passed, please check the input', 422));
+  if (!errors.isEmpty()) {
+    return next(new HttpError('Invalid input passed, please check the input', 422));
   }
 
   const { title, description, address, creator } = req.body;
@@ -72,16 +60,22 @@ const createPlace = async (req, res, next) => {
     return next(error);
   }
 
-  const createdPlace = {
-    id: uuid(),
+  const createdPlace = new Place({
     title,
     description,
-    location: coordinates,
     address,
+    location: coordinates,
+    image:
+      'https://static.independent.co.uk/s3fs-public/thumbnails/image/2016/01/15/15/Breaking-Bad-House.jpg.png?w968h681',
     creator,
-  };
+  });
 
-  DUMMY_PLACES.push(createdPlace);
+  try {
+    await createdPlace.save();
+  } catch (error) {
+    const err = new HttpError('Creating place failed!', 500);
+    return next(err);
+  }
 
   res.status(201).json({ place: createdPlace });
 };
