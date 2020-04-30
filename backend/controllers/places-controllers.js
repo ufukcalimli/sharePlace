@@ -6,22 +6,6 @@ const { getCoordForAddress } = require('../util/location');
 const Place = require('../models/place');
 const User = require('../models/user');
 
-let DUMMY_PLACES = [
-  {
-    id: 'p1',
-    title: 'Walter White House',
-    description: "One of the most famous drug dealers' house.",
-    address: '3828 Piermont Dr NE, Albuquerque, NM 87111',
-    image:
-      'https://static.independent.co.uk/s3fs-public/thumbnails/image/2016/01/15/15/Breaking-Bad-House.jpg.png?w968h681',
-    location: {
-      lat: 35.126114,
-      lng: -106.536564,
-    },
-    creator: 'u1',
-  },
-];
-
 const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
 
@@ -30,8 +14,7 @@ const getPlaceById = async (req, res, next) => {
   try {
     place = await Place.findById(placeId);
   } catch (error) {
-    const err = new HttpError('500 status code, could not the find place!', 500);
-    return next(err);
+    return next(new HttpError('500 status code, could not the find place!', 500));
   }
 
   if (!place) {
@@ -44,18 +27,18 @@ const getPlaceById = async (req, res, next) => {
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  let places;
+  let userWithPlaces;
   try {
-    places = await Place.find({ creator: userId });
+    userWithPlaces = await User.findById(userId).populate('places');
   } catch (error) {
     return next(new HttpError('Fetching places failed!', 500));
   }
 
-  if (!places || places.length === 0) {
+  if (!userWithPlaces || userWithPlaces.length === 0) {
     return next(new HttpError('Could not find places by user ID!', 404));
   }
 
-  res.json({ places: places.map((p) => p.toObject({ getters: true })) });
+  res.json({ places: userWithPlaces.map((p) => p.toObject({ getters: true })) });
 };
 
 const createPlace = async (req, res, next) => {
